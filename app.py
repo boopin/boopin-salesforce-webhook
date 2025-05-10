@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, send_file, render_template_string, redirect, url_for
+from flask import Flask, request, jsonify, send_file, render_template, redirect, url_for
 import requests
 import os
 import csv
@@ -71,16 +71,13 @@ def logs():
     if not os.path.exists("leads.csv"):
         return "Log file not found."
     df = pd.read_csv("leads.csv")
-    return render_template_string("""
-        <h2>📄 Logged Leads</h2>
-        <p><a href='/download-log'>⬇️ Download CSV</a></p>
-        {{ df.to_html(index=False, classes='table table-bordered table-striped') }}
-        <style>
-        body { font-family: sans-serif; padding: 20px; }
-        .table { border-collapse: collapse; width: 100%; }
-        .table td, .table th { border: 1px solid #ddd; padding: 8px; }
-        </style>
-    """, df=df)
+    campaign_filter = request.args.get("campaign")
+    all_campaigns = sorted(df["Campaign_Name"].dropna().unique())
+    if campaign_filter:
+        df = df[df["Campaign_Name"] == campaign_filter]
+    table_html = df.to_html(index=False, classes="table table-striped table-bordered")
+    return render_template("logs.html", title="Lead Logs", table=table_html, campaigns=all_campaigns, selected=campaign_filter)
+
 @app.route("/form", methods=["GET", "POST"])
 def form():
     if request.method == "POST":
@@ -118,25 +115,7 @@ def form():
             log_to_csv(data, 500, str(e))
             return f"Error: {str(e)}", 500
 
-    return render_template_string("""
-        <h2>🚗 Submit a Test Lead</h2>
-        <form method="post">
-            <input name="firstname" placeholder="First Name" required><br><br>
-            <input name="lastname" placeholder="Last Name" required><br><br>
-            <input name="mobile" placeholder="Mobile" required><br><br>
-            <input name="email" placeholder="Email" required><br><br>
-            <select name="source">
-                <option>TikTok</option>
-                <option>Snapchat</option>
-            </select><br><br>
-            <select name="campaign">
-                <option>PET-Q2-2025</option>
-                <option>PET-Summer-2025</option>
-            </select><br><br>
-            <button type="submit">Submit Lead</button>
-        </form>
-        <style>body { font-family: sans-serif; padding: 20px; }</style>
-    """)
+    return render_template("form.html", title="Submit a Test Lead")
 
 @app.route("/dashboard")
 def dashboard():
@@ -148,24 +127,7 @@ def dashboard():
     summary = df.groupby("Campaign_Source").size().to_dict()
     labels = list(summary.keys())
     values = list(summary.values())
-    return render_template_string("""
-        <h2>📊 Dashboard: Leads by Source</h2>
-        <canvas id="chart" width="400" height="200"></canvas>
-        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-        <script>
-        new Chart(document.getElementById("chart"), {
-            type: 'pie',
-            data: {
-                labels: {{ labels }},
-                datasets: [{
-                    data: {{ values }},
-                    backgroundColor: ['#4CAF50', '#2196F3', '#FF9800']
-                }]
-            }
-        });
-        </script>
-        <style>body { font-family: sans-serif; padding: 20px; }</style>
-    """, labels=labels, values=values)
+    return render_template("dashboard.html", title="Dashboard: Leads by Source", labels=labels, values=values)
 
 @app.route("/")
 def index():
