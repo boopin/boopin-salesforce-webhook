@@ -156,16 +156,4 @@ def dashboard():
 
 @app.route("/")
 def index():
-    return """
-    <h2>🚀 Webhook is Live</h2>
-    <ul>
-        <li><a href="/form">📤 Submit Test Lead</a></li>
-        <li><a href="/logs">📄 View Lead Log</a></li>
-        <li><a href="/download-log">⬇️ Download CSV</a></li>
-        <li><a href="/export-excel">📤 Export to Excel</a></li>
-        <li><a href="/dashboard">📊 Dashboard</a></li>
-    </ul>
-    """
-
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    return render_template("index.html", title="Boopin Webhook")
