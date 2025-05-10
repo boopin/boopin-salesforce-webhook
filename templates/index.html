@@ -8,12 +8,17 @@
   </p>
 </div>
 
+<div class="form-check form-switch text-end mb-3">
+  <input class="form-check-input" type="checkbox" id="refreshToggle" checked>
+  <label class="form-check-label" for="refreshToggle">Auto-Refresh Stats</label>
+</div>
+
 <div class="row text-center mb-4">
   <div class="col-md-6">
     <div class="card shadow-sm">
       <div class="card-body">
         <h5 class="card-title">📈 Total Leads Submitted</h5>
-        <p class="display-6">{{ lead_count }}</p>
+        <p class="display-6"><span id="leadCounter">0</span></p>
       </div>
     </div>
   </div>
@@ -21,7 +26,11 @@
     <div class="card shadow-sm">
       <div class="card-body">
         <h5 class="card-title">🕒 Last Submission</h5>
-        <p class="display-6">{{ last_time or "—" }}</p>
+        <p class="display-6">
+          <span id="lastTimestamp" style="opacity:0; transition: opacity 1s;">
+            {{ last_time or "—" }}
+          </span>
+        </p>
       </div>
     </div>
   </div>
@@ -38,4 +47,36 @@
 <div class="text-center mt-5 small text-muted">
   &copy; 2025 Boopin Tech Team • v1.0
 </div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/countup.js/2.0.7/countUp.min.js"></script>
+<script>
+  const leadCounter = new CountUp('leadCounter', {{ lead_count or 0 }});
+  if (!leadCounter.error) leadCounter.start();
+  else document.getElementById("leadCounter").innerText = {{ lead_count or 0 }};
+
+  window.addEventListener('load', () => {
+    document.getElementById("lastTimestamp").style.opacity = 1;
+  });
+
+  let autoRefreshEnabled = true;
+  const refreshToggle = document.getElementById("refreshToggle");
+  refreshToggle.addEventListener("change", () => {
+    autoRefreshEnabled = refreshToggle.checked;
+  });
+
+  setInterval(() => {
+    if (!autoRefreshEnabled) return;
+    fetch("/api/stats")
+      .then(res => res.json())
+      .then(data => {
+        leadCounter.update(data.lead_count);
+        const ts = document.getElementById("lastTimestamp");
+        ts.style.opacity = 0;
+        setTimeout(() => {
+          ts.innerText = data.last_time || "—";
+          ts.style.opacity = 1;
+        }, 300);
+      });
+  }, 30000);
+</script>
 {% endblock %}
