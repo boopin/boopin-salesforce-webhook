@@ -8,6 +8,25 @@
   </p>
 </div>
 
+<div class="row text-center mb-4">
+  <div class="col-md-6">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h5 class="card-title">📈 Total Leads Submitted</h5>
+        <p class="display-6">{{ lead_count }}</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h5 class="card-title">🕒 Last Submission</h5>
+        <p class="display-6">{{ last_time or "—" }}</p>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="d-grid gap-3 col-lg-6 mx-auto">
   <a href="/form" class="btn btn-primary btn-lg">📤 Submit Test Lead</a>
   <a href="/logs" class="btn btn-outline-secondary">📄 View Lead Logs</a>
