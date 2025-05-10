@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: salesforce-webhook
+    env: python
+    plan: free
+    buildCommand: ""
+    startCommand: "python app.py"
+    envVars:
+      - key: CLIENT_ID
+        sync: false
+      - key: CLIENT_SECRET
+        sync: false
+      - key: USERNAME
+        sync: false
+      - key: PASSWORD
+        sync: false
+      - key: TOKEN_URL
+        sync: false
