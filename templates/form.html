@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block content %}
+<form method="post" class="needs-validation" novalidate>
+  <div class="mb-3">
+    <label for="firstname" class="form-label">First Name</label>
+    <input type="text" class="form-control" name="firstname" id="firstname" required>
+  </div>
+  <div class="mb-3">
+    <label for="lastname" class="form-label">Last Name</label>
+    <input type="text" class="form-control" name="lastname" id="lastname" required>
+  </div>
+  <div class="mb-3">
+    <label for="mobile" class="form-label">Mobile</label>
+    <input type="text" class="form-control" name="mobile" id="mobile" required>
+  </div>
+  <div class="mb-3">
+    <label for="email" class="form-label">Email</label>
+    <input type="email" class="form-control" name="email" id="email" required>
+  </div>
+  <div class="mb-3">
+    <label for="source" class="form-label">Source</label>
+    <select class="form-select" name="source" id="source" required>
+      <option value="TikTok">TikTok</option>
+      <option value="Snapchat">Snapchat</option>
+    </select>
+  </div>
+  <div class="mb-3">
+    <label for="campaign" class="form-label">Campaign</label>
+    <select class="form-select" name="campaign" id="campaign" required>
+      <option value="PET-Q2-2025">PET-Q2-2025</option>
+      <option value="PET-Summer-2025">PET-Summer-2025</option>
+    </select>
+  </div>
+  <button type="submit" class="btn btn-primary">Submit Lead</button>
+</form>
+{% endblock %}
