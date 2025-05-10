@@ -167,5 +167,18 @@ def index():
                 last_time = df["Timestamp"].max().strftime("%Y-%m-%d %H:%M")
     return render_template("index.html", title="Boopin Webhook", lead_count=lead_count, last_time=last_time)
 
+@app.route("/api/stats")
+def api_stats():
+    lead_count = 0
+    last_time = None
+    if os.path.exists("leads.csv"):
+        df = pd.read_csv("leads.csv")
+        lead_count = len(df)
+        if "Timestamp" in df.columns:
+            df["Timestamp"] = pd.to_datetime(df["Timestamp"], errors="coerce")
+            if not df["Timestamp"].isnull().all():
+                last_time = df["Timestamp"].max().strftime("%Y-%m-%d %H:%M")
+    return jsonify({"lead_count": lead_count, "last_time": last_time})
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
