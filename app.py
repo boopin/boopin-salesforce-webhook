@@ -66,17 +66,42 @@ def webhook():
 def download_log():
     return send_file("leads.csv", mimetype="text/csv", as_attachment=True)
 
+@app.route("/export-excel")
+def export_excel():
+    if not os.path.exists("leads.csv"):
+        return "Log file not found.", 404
+    df = pd.read_csv("leads.csv")
+    output_path = "leads.xlsx"
+    df.to_excel(output_path, index=False)
+    return send_file(output_path, mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                     as_attachment=True, download_name="leads.xlsx")
+
 @app.route("/logs")
 def logs():
     if not os.path.exists("leads.csv"):
         return "Log file not found."
     df = pd.read_csv("leads.csv")
+
     campaign_filter = request.args.get("campaign")
-    all_campaigns = sorted(df["Campaign_Name"].dropna().unique())
+    source_filter = request.args.get("source")
+    from_date = request.args.get("from_date")
+
+    all_campaigns = sorted(df["Campaign_Name"].dropna().unique()) if "Campaign_Name" in df else []
+    all_sources = sorted(df["Campaign_Source"].dropna().unique()) if "Campaign_Source" in df else []
+
     if campaign_filter:
         df = df[df["Campaign_Name"] == campaign_filter]
+    if source_filter:
+        df = df[df["Campaign_Source"] == source_filter]
+    if from_date:
+        df["Timestamp"] = pd.to_datetime(df["Timestamp"], errors="coerce")
+        df = df[df["Timestamp"] >= pd.to_datetime(from_date)]
+
     table_html = df.to_html(index=False, classes="table table-striped table-bordered")
-    return render_template("logs.html", title="Lead Logs", table=table_html, campaigns=all_campaigns, selected=campaign_filter)
+    return render_template("logs.html", title="Lead Logs", table=table_html,
+                           campaigns=all_campaigns, selected=campaign_filter,
+                           sources=all_sources, selected_source=source_filter,
+                           from_date=from_date or "")
 
 @app.route("/form", methods=["GET", "POST"])
 def form():
@@ -137,6 +162,7 @@ def index():
         <li><a href="/form">📤 Submit Test Lead</a></li>
         <li><a href="/logs">📄 View Lead Log</a></li>
         <li><a href="/download-log">⬇️ Download CSV</a></li>
+        <li><a href="/export-excel">📤 Export to Excel</a></li>
         <li><a href="/dashboard">📊 Dashboard</a></li>
     </ul>
     """
