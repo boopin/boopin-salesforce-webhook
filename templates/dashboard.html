@@ -1,17 +1,33 @@
 {% extends "base.html" %}
+
 {% block content %}
-<canvas id="chart" width="400" height="200"></canvas>
+<canvas id="leadChart" height="300"></canvas>
+
+<div class="mt-4 text-center">
+  <a href="/" class="btn btn-outline-primary">⬅️ Back to Home</a>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-new Chart(document.getElementById("chart"), {
-    type: 'pie',
+  const ctx = document.getElementById('leadChart').getContext('2d');
+  const chart = new Chart(ctx, {
+    type: 'bar',
     data: {
-        labels: {{ labels|tojson }},
-        datasets: [{
-            data: {{ values|tojson }},
-            backgroundColor: ['#4CAF50', '#2196F3', '#FFC107']
-        }]
+      labels: {{ labels }},
+      datasets: [{
+        label: 'Leads by Source',
+        data: {{ values }},
+        backgroundColor: 'rgba(0, 123, 255, 0.6)'
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: {
+          display: false
+        }
+      }
     }
-});
+  });
 </script>
 {% endblock %}
