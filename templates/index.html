@@ -1,11 +1,22 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="list-group">
-  <a href="/form" class="list-group-item list-group-item-action">📤 Submit Test Lead</a>
-  <a href="/logs" class="list-group-item list-group-item-action">📄 View Lead Log</a>
-  <a href="/download-log" class="list-group-item list-group-item-action">⬇️ Download CSV</a>
-  <a href="/export-excel" class="list-group-item list-group-item-action">📤 Export to Excel</a>
-  <a href="/dashboard" class="list-group-item list-group-item-action">📊 Dashboard</a>
+<div class="text-center mb-4">
+  <p class="lead">
+    Welcome to <strong>Boopin’s Salesforce Lead Integration Tool</strong>.<br>
+    Manage and monitor leads from TikTok and Snapchat in real-time.
+  </p>
+</div>
+
+<div class="d-grid gap-3 col-lg-6 mx-auto">
+  <a href="/form" class="btn btn-primary btn-lg">📤 Submit Test Lead</a>
+  <a href="/logs" class="btn btn-outline-secondary">📄 View Lead Logs</a>
+  <a href="/dashboard" class="btn btn-outline-info">📊 View Dashboard</a>
+  <a href="/download-log" class="btn btn-outline-dark">⬇️ Download CSV</a>
+  <a href="/export-excel" class="btn btn-success">📥 Export to Excel</a>
+</div>
+
+<div class="text-center mt-5 small text-muted">
+  &copy; 2025 Boopin Tech Team • v1.0
 </div>
 {% endblock %}
