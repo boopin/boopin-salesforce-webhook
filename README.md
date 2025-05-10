@@ -44,7 +44,7 @@ This lightweight Flask API receives lead data from TikTok and Snapchat via webho
   "Firstname": "Test John",
   "Lastname": "Dummy Smith",
   "Mobile": "0512345681",
-  "Email": "omar.test@example.com",
+  "Email": "john.smith.dummy@example.com",
   "Campaign_Source": "Snapchat",
   "Campaign_Name": "PET-Q2-2025",
   ...
