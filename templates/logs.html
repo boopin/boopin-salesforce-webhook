@@ -1,5 +1,34 @@
 {% extends "base.html" %}
 {% block content %}
-<p><a href='/download-log' class="btn btn-sm btn-secondary mb-3">⬇️ Download CSV</a></p>
+<form method="get" class="row g-3 mb-4">
+  <div class="col-md-4">
+    <label for="campaign" class="form-label">Campaign Filter</label>
+    <select name="campaign" class="form-select">
+      <option value="">All Campaigns</option>
+      {% for c in campaigns %}
+        <option value="{{ c }}" {% if c == selected %}selected{% endif %}>{{ c }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-md-4">
+    <label for="source" class="form-label">Source Filter</label>
+    <select name="source" class="form-select">
+      <option value="">All Sources</option>
+      {% for s in sources %}
+        <option value="{{ s }}" {% if s == selected_source %}selected{% endif %}>{{ s }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-md-4">
+    <label for="date" class="form-label">From Date</label>
+    <input type="date" name="from_date" class="form-control" value="{{ from_date }}">
+  </div>
+  <div class="col-md-12 d-flex gap-3">
+    <button type="submit" class="btn btn-primary">Filter</button>
+    <a href="/logs" class="btn btn-secondary">Reset</a>
+    <a href="/export-excel" class="btn btn-success">📥 Export to Excel</a>
+  </div>
+</form>
+
 {{ table|safe }}
 {% endblock %}
