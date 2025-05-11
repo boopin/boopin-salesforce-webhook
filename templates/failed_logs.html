@@ -21,6 +21,7 @@
   </div>
   <div class="col-md-6 text-end">
     <a href="/download-failed-log" class="btn btn-outline-danger">⬇️ Download Failed Leads CSV</a>
+<a href="/export-failed-log{% if selected_error %}?error_type={{ selected_error }}{% endif %}" class="btn btn-outline-success ms-2">📥 Export Filtered (Excel)</a>
     <a href="/" class="btn btn-outline-secondary ms-2">⬅️ Back to Home</a>
   </div>
 </div>
