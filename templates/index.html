@@ -8,15 +8,24 @@
   Manage and monitor leads from TikTok and Snapchat in real-time.</p>
 </div>
 
-{% if failed_count > 5 %}
-<div class="alert alert-danger text-center fw-bold">
-  ⚠️ Warning: High number of failed leads ({{ failed_count }}) detected!
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <label for="threshold" class="form-label me-2 fw-bold">⚙️ Alert Threshold:</label>
+    <select id="threshold" class="form-select d-inline-block w-auto">
+      <option value="3">3</option>
+      <option value="5" selected>5</option>
+      <option value="10">10</option>
+      <option value="15">15</option>
+    </select>
+  </div>
+  <div>
+    <span class="me-2">Auto-Refresh Stats</span>
+    <input type="checkbox" checked class="form-check-input">
+  </div>
 </div>
-{% endif %}
 
-<div class="d-flex justify-content-end align-items-center mb-2">
-  <span class="me-2">Auto-Refresh Stats</span>
-  <input type="checkbox" checked class="form-check-input">
+<div id="alertBox" class="alert alert-danger text-center fw-bold d-none">
+  ⚠️ Warning: High number of failed leads detected!
 </div>
 
 <div class="row text-center mb-4">
@@ -35,7 +44,7 @@
   <div class="col-md-4">
     <div class="bg-white shadow-sm rounded p-3 border border-danger">
       <h5 class="text-danger">❌ Failed Leads</h5>
-      <h2 class="text-danger">{{ failed_count }}</h2>
+      <h2 class="text-danger" id="failed-count">{{ failed_count }}</h2>
     </div>
   </div>
 </div>
@@ -50,14 +59,33 @@
 </div>
 
 <script>
-  // Auto-refresh every 30 seconds
-  setInterval(() => {
+  function checkThreshold(failedCount, threshold) {
+    const alertBox = document.getElementById("alertBox");
+    if (failedCount >= threshold) {
+      alertBox.classList.remove("d-none");
+    } else {
+      alertBox.classList.add("d-none");
+    }
+  }
+
+  function refreshStats() {
     fetch('/api/stats')
-      .then(response => response.json())
+      .then(res => res.json())
       .then(data => {
         document.getElementById("lead-count").textContent = data.lead_count;
         document.getElementById("last-submission").textContent = data.last_time || '-';
+        const failed = parseInt(document.getElementById("failed-count").textContent);
+        const threshold = parseInt(document.getElementById("threshold").value);
+        checkThreshold(failed, threshold);
       });
-  }, 30000);
+  }
+
+  document.getElementById("threshold").addEventListener("change", () => {
+    const failed = parseInt(document.getElementById("failed-count").textContent);
+    const threshold = parseInt(document.getElementById("threshold").value);
+    checkThreshold(failed, threshold);
+  });
+
+  setInterval(refreshStats, 30000);
 </script>
 {% endblock %}
