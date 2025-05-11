@@ -1,4 +1,3 @@
-
 from flask import Flask, request, jsonify, send_file, render_template, redirect, url_for
 import requests
 import os
@@ -17,6 +16,7 @@ USERNAME = os.getenv("USERNAME")
 PASSWORD = os.getenv("PASSWORD")
 TOKEN_URL = os.getenv("TOKEN_URL")
 LEAD_API_PATH = "/services/apexrest/lead/createlead"
+
 
 def get_salesforce_token():
     payload = {
@@ -94,6 +94,9 @@ def export_excel():
     if not os.path.exists("leads.csv"):
         return "Log file not found.", 404
     df = pd.read_csv("leads.csv")
+    if "Timestamp" in df.columns:
+        df["Timestamp"] = pd.to_datetime(df["Timestamp"], errors="coerce")
+        df["Timestamp"] = df["Timestamp"].dt.strftime("%d-%m-%Y %H:%M")
     output_path = "leads.xlsx"
     df.to_excel(output_path, index=False)
     return send_file(output_path, mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -111,6 +114,10 @@ def failed_logs():
         return "No failed leads found."
 
     df = pd.read_csv("failed_leads.csv")
+    if "Timestamp" in df.columns:
+        df["Timestamp"] = pd.to_datetime(df["Timestamp"], errors="coerce")
+        df["Timestamp"] = df["Timestamp"].dt.strftime("%d-%m-%Y %H:%M")
+
     error_types = sorted(df["Error"].dropna().unique()) if "Error" in df else []
     selected_error = request.args.get("error_type")
     if selected_error:
@@ -118,9 +125,6 @@ def failed_logs():
 
     headers = df.columns.tolist()
     rows = df.values.tolist()
-    if \"Timestamp\" in df.columns:
-        df[\"Timestamp\"] = pd.to_datetime(df[\"Timestamp\"], errors=\"coerce\")
-        df[\"Timestamp\"] = df[\"Timestamp\"].dt.strftime(\"%d-%m-%Y %H:%M\")
 
     return render_template("failed_logs.html", title="Failed Leads Log",
                            headers=headers, rows=rows,
@@ -145,10 +149,10 @@ def logs():
         df = df[df["Campaign_Name"] == campaign_filter]
     if source_filter:
         df = df[df["Campaign_Source"] == source_filter]
-    if from_date:
-if "Timestamp" in df.columns:
+    if "Timestamp" in df.columns:
         df["Timestamp"] = pd.to_datetime(df["Timestamp"], errors="coerce")
         df["Timestamp"] = df["Timestamp"].dt.strftime("%d-%m-%Y %H:%M")
+    if from_date:
         df["Timestamp"] = pd.to_datetime(df["Timestamp"], errors="coerce")
         df = df[df["Timestamp"] >= pd.to_datetime(from_date)]
 
@@ -241,7 +245,7 @@ def api_stats():
         if "Timestamp" in df.columns:
             df["Timestamp"] = pd.to_datetime(df["Timestamp"], errors="coerce")
             if not df["Timestamp"].isnull().all():
-                last_time = df["Timestamp"].max().strftime("%Y-%m-%d %H:%M")
+                last_time = df["Timestamp"].max().strftime("%d-%m-%Y %H:%M")
     return jsonify({"lead_count": lead_count, "last_time": last_time})
 
 if __name__ == "__main__":
