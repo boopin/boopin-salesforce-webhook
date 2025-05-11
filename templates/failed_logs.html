@@ -1,0 +1,16 @@
+
+{% extends "base.html" %}
+
+{% block content %}
+<div class="text-center mb-4">
+  <h2 class="text-danger">🚫 Failed Leads Log</h2>
+  <p class="lead">These are leads that failed to reach Salesforce</p>
+</div>
+
+<div class="mb-3 text-center">
+  <a href="/download-failed-log" class="btn btn-outline-danger">⬇️ Download Failed Leads CSV</a>
+  <a href="/" class="btn btn-outline-secondary ms-2">⬅️ Back to Home</a>
+</div>
+
+{{ table|safe }}
+{% endblock %}
