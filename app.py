@@ -118,6 +118,9 @@ def failed_logs():
 
     headers = df.columns.tolist()
     rows = df.values.tolist()
+    if \"Timestamp\" in df.columns:
+        df[\"Timestamp\"] = pd.to_datetime(df[\"Timestamp\"], errors=\"coerce\")
+        df[\"Timestamp\"] = df[\"Timestamp\"].dt.strftime(\"%d-%m-%Y %H:%M\")
 
     return render_template("failed_logs.html", title="Failed Leads Log",
                            headers=headers, rows=rows,
@@ -143,6 +146,9 @@ def logs():
     if source_filter:
         df = df[df["Campaign_Source"] == source_filter]
     if from_date:
+if "Timestamp" in df.columns:
+        df["Timestamp"] = pd.to_datetime(df["Timestamp"], errors="coerce")
+        df["Timestamp"] = df["Timestamp"].dt.strftime("%d-%m-%Y %H:%M")
         df["Timestamp"] = pd.to_datetime(df["Timestamp"], errors="coerce")
         df = df[df["Timestamp"] >= pd.to_datetime(from_date)]
 
