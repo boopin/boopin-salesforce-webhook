@@ -94,9 +94,6 @@ def export_excel():
     if not os.path.exists("leads.csv"):
         return "Log file not found.", 404
     df = pd.read_csv("leads.csv")
-if \"Timestamp\" in df.columns:
-    df[\"Timestamp\"] = pd.to_datetime(df[\"Timestamp\"], errors=\"coerce\")
-    df[\"Timestamp\"] = df[\"Timestamp\"].dt.strftime(\"%d-%m-%Y %H:%M\")
     output_path = "leads.xlsx"
     df.to_excel(output_path, index=False)
     return send_file(output_path, mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
