@@ -1,12 +1,12 @@
 
 {% extends "base.html" %}
 {% block content %}
-<div class="text-center my-4">
-  <img src="https://i.imgur.com/CsnXPLZ.jpeg" alt="Boopin Logo" height="60">
-  <h1 class="mt-3">Boopin Webhook</h1>
-  <p class="lead">Welcome to <strong>Boopin’s Salesforce Lead Integration Tool.</strong><br>
-  Manage and monitor leads from TikTok and Snapchat in real-time.</p>
+
+{% if failed_count > 5 %}
+<div class="alert alert-danger text-center fw-bold">
+  ⚠️ Warning: High number of failed leads ({{ failed_count }}) detected!
 </div>
+{% endif %}
 
 <div class="d-flex justify-content-between align-items-center mb-3">
   <div>
@@ -88,4 +88,5 @@
 
   setInterval(refreshStats, 30000);
 </script>
+
 {% endblock %}
