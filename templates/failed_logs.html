@@ -7,10 +7,46 @@
   <p class="lead">These are leads that failed to reach Salesforce</p>
 </div>
 
-<div class="mb-3 text-center">
-  <a href="/download-failed-log" class="btn btn-outline-danger">⬇️ Download Failed Leads CSV</a>
-  <a href="/" class="btn btn-outline-secondary ms-2">⬅️ Back to Home</a>
+<div class="row mb-3">
+  <div class="col-md-6">
+    <form method="get" class="d-flex">
+      <select name="error_type" class="form-select me-2">
+        <option value="">All Error Types</option>
+        {% for e in error_types %}
+          <option value="{{ e }}" {% if e == selected_error %}selected{% endif %}>{{ e }}</option>
+        {% endfor %}
+      </select>
+      <button type="submit" class="btn btn-primary">Filter</button>
+    </form>
+  </div>
+  <div class="col-md-6 text-end">
+    <a href="/download-failed-log" class="btn btn-outline-danger">⬇️ Download Failed Leads CSV</a>
+    <a href="/" class="btn btn-outline-secondary ms-2">⬅️ Back to Home</a>
+  </div>
 </div>
 
-{{ table|safe }}
+{% if table %}
+  <div class="table-responsive">
+    <table class="table table-bordered table-striped">
+      <thead class="table-dark">
+        <tr>
+          {% for col in headers %}
+            <th>{{ col }}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in rows %}
+          <tr class="{% if 'INVALID' in row[1] or '400' in row[2]|string %}table-warning{% elif row[2]|int >= 500 %}table-danger{% endif %}">
+            {% for cell in row %}
+              <td>{{ cell }}</td>
+            {% endfor %}
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% else %}
+  <p class="text-muted">No failed leads available.</p>
+{% endif %}
 {% endblock %}
