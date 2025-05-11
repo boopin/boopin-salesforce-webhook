@@ -207,7 +207,9 @@ def dashboard():
 @app.route("/")
 def index():
     lead_count = 0
+    failed_count = 0
     last_time = None
+
     if os.path.exists("leads.csv"):
         df = pd.read_csv("leads.csv")
         lead_count = len(df)
@@ -215,7 +217,13 @@ def index():
             df["Timestamp"] = pd.to_datetime(df["Timestamp"], errors="coerce")
             if not df["Timestamp"].isnull().all():
                 last_time = df["Timestamp"].max().strftime("%Y-%m-%d %H:%M")
-    return render_template("index.html", title="Boopin Webhook", lead_count=lead_count, last_time=last_time)
+
+    if os.path.exists("failed_leads.csv"):
+        failed_df = pd.read_csv("failed_leads.csv")
+        failed_count = len(failed_df)
+
+    return render_template("index.html", title="Boopin Webhook", lead_count=lead_count,
+                           last_time=last_time, failed_count=failed_count)
 
 @app.route("/api/stats")
 def api_stats():
@@ -229,23 +237,6 @@ def api_stats():
             if not df["Timestamp"].isnull().all():
                 last_time = df["Timestamp"].max().strftime("%Y-%m-%d %H:%M")
     return jsonify({"lead_count": lead_count, "last_time": last_time})
-
-@app.route("/export-failed-log")
-def export_filtered_failed_log():
-    if not os.path.exists("failed_leads.csv"):
-        return "No failed leads found."
-
-    df = pd.read_csv("failed_leads.csv")
-    error_type = request.args.get("error_type")
-
-    if error_type:
-        df = df[df["Error"] == error_type]
-
-    export_path = "filtered_failed_leads.xlsx"
-    df.to_excel(export_path, index=False)
-
-    return send_file(export_path, mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                     as_attachment=True, download_name="filtered_failed_leads.xlsx")
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
