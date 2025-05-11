@@ -1,0 +1,13 @@
+name: 🟢 Keep Render App Awake
+
+on:
+  schedule:
+    - cron: "*/14 * * * *"  # ⏰ Run every 14 minutes (GitHub uses UTC)
+  workflow_dispatch:       # Allow manual runs from GitHub Actions tab
+
+jobs:
+  ping-render:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🌐 Ping Render App Homepage
+        run: curl --silent https://boopin-salesforce-webhook.onrender.com/
