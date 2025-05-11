@@ -216,7 +216,7 @@ def index():
         if "Timestamp" in df.columns:
             df["Timestamp"] = pd.to_datetime(df["Timestamp"], errors="coerce")
             if not df["Timestamp"].isnull().all():
-                last_time = df["Timestamp"].max().strftime("%Y-%m-%d %H:%M")
+                last_time = df["Timestamp"].max().strftime("%d-%m-%Y %H:%M")
 
     if os.path.exists("failed_leads.csv"):
         failed_df = pd.read_csv("failed_leads.csv")
