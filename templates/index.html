@@ -8,6 +8,12 @@
   Manage and monitor leads from TikTok and Snapchat in real-time.</p>
 </div>
 
+{% if failed_count > 5 %}
+<div class="alert alert-danger text-center fw-bold">
+  ⚠️ Warning: High number of failed leads ({{ failed_count }}) detected!
+</div>
+{% endif %}
+
 <div class="d-flex justify-content-end align-items-center mb-2">
   <span class="me-2">Auto-Refresh Stats</span>
   <input type="checkbox" checked class="form-check-input">
@@ -17,13 +23,13 @@
   <div class="col-md-4">
     <div class="bg-white shadow-sm rounded p-3 border border-primary">
       <h5 class="text-primary">📈 Total Leads Submitted</h5>
-      <h2 class="text-primary">{{ lead_count }}</h2>
+      <h2 class="text-primary" id="lead-count">{{ lead_count }}</h2>
     </div>
   </div>
   <div class="col-md-4">
     <div class="bg-white shadow-sm rounded p-3 border border-secondary">
       <h5 class="text-muted">🕒 Last Submission</h5>
-      <h2 class="text-muted">{{ last_time or '-' }}</h2>
+      <h2 class="text-muted" id="last-submission">{{ last_time or '-' }}</h2>
     </div>
   </div>
   <div class="col-md-4">
@@ -42,4 +48,16 @@
   <a href="/download-log" class="btn btn-outline-dark">⬇️ Download CSV</a>
   <a href="/export-excel" class="btn btn-success">📥 Export to Excel</a>
 </div>
+
+<script>
+  // Auto-refresh every 30 seconds
+  setInterval(() => {
+    fetch('/api/stats')
+      .then(response => response.json())
+      .then(data => {
+        document.getElementById("lead-count").textContent = data.lead_count;
+        document.getElementById("last-submission").textContent = data.last_time || '-';
+      });
+  }, 30000);
+</script>
 {% endblock %}
