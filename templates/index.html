@@ -1,12 +1,11 @@
 
 {% extends "base.html" %}
 {% block content %}
-
-{% if failed_count > 5 %}
-<div class="alert alert-danger text-center fw-bold">
-  ⚠️ Warning: High number of failed leads ({{ failed_count }}) detected!
+<div class="text-center my-4">
+  <h1 class="mb-3">Boopin Webhook</h1>
+  <p class="lead mb-0">Welcome to <strong>Boopin’s Salesforce Lead Integration Tool.</strong></p>
+  <p class="text-muted">Manage and monitor leads from TikTok and Snapchat in real-time.</p>
 </div>
-{% endif %}
 
 <div class="d-flex justify-content-between align-items-center mb-3">
   <div>
@@ -59,6 +58,8 @@
 </div>
 
 <script>
+  const thresholdKey = "alert_threshold";
+
   function checkThreshold(failedCount, threshold) {
     const alertBox = document.getElementById("alertBox");
     if (failedCount >= threshold) {
@@ -81,12 +82,23 @@
   }
 
   document.getElementById("threshold").addEventListener("change", () => {
+    const newValue = document.getElementById("threshold").value;
+    localStorage.setItem(thresholdKey, newValue);
     const failed = parseInt(document.getElementById("failed-count").textContent);
-    const threshold = parseInt(document.getElementById("threshold").value);
-    checkThreshold(failed, threshold);
+    checkThreshold(failed, parseInt(newValue));
   });
 
-  setInterval(refreshStats, 30000);
-</script>
+  function initThreshold() {
+    const saved = localStorage.getItem(thresholdKey);
+    if (saved) {
+      document.getElementById("threshold").value = saved;
+    }
+    checkThreshold(parseInt(document.getElementById("failed-count").textContent), parseInt(saved || 5));
+  }
 
+  window.addEventListener("DOMContentLoaded", () => {
+    initThreshold();
+    setInterval(refreshStats, 30000);
+  });
+</script>
 {% endblock %}
