@@ -1,3 +1,4 @@
+
 from flask import Flask, request, jsonify, send_file, render_template, redirect, url_for
 import requests
 import os
@@ -48,6 +49,27 @@ def log_to_csv(data, status, message):
             writer.writerow(headers)
         writer.writerow([datetime.now().isoformat(), status, message] + list(data.values()))
 
+def log_failed_lead(data, error_msg, status_code, response_text):
+    filename = "failed_leads.csv"
+    file_exists = os.path.isfile(filename)
+    with open(filename, "a", newline="", encoding="utf-8") as csvfile:
+        writer = csv.writer(csvfile)
+        if not file_exists:
+            headers = ["Timestamp", "Error", "Status", "Response", "Firstname", "Lastname", "Mobile", "Email", "Campaign_Source", "Campaign_Name"]
+            writer.writerow(headers)
+        writer.writerow([
+            datetime.now().isoformat(),
+            error_msg,
+            status_code,
+            response_text,
+            data.get("Firstname", ""),
+            data.get("Lastname", ""),
+            data.get("Mobile", ""),
+            data.get("Email", ""),
+            data.get("Campaign_Source", ""),
+            data.get("Campaign_Name", "")
+        ])
+
 @app.route("/webhook", methods=["POST"])
 def webhook():
     data = request.json
@@ -60,6 +82,7 @@ def webhook():
         return jsonify({"status": status, "response": response}), status
     except Exception as e:
         log_to_csv(data, 500, str(e))
+        log_failed_lead(data, str(e), 500, "Webhook Error")
         return jsonify({"error": str(e)}), 500
 
 @app.route("/download-log")
@@ -75,6 +98,32 @@ def export_excel():
     df.to_excel(output_path, index=False)
     return send_file(output_path, mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                      as_attachment=True, download_name="leads.xlsx")
+
+@app.route("/download-failed-log")
+def download_failed_log():
+    if not os.path.exists("failed_leads.csv"):
+        return "No failed leads found."
+    return send_file("failed_leads.csv", mimetype="text/csv", as_attachment=True)
+
+@app.route("/failed-logs")
+def failed_logs():
+    if not os.path.exists("failed_leads.csv"):
+        return "No failed leads found."
+
+    df = pd.read_csv("failed_leads.csv")
+    error_types = sorted(df["Error"].dropna().unique()) if "Error" in df else []
+    selected_error = request.args.get("error_type")
+    if selected_error:
+        df = df[df["Error"] == selected_error]
+
+    headers = df.columns.tolist()
+    rows = df.values.tolist()
+
+    return render_template("failed_logs.html", title="Failed Leads Log",
+                           headers=headers, rows=rows,
+                           error_types=error_types,
+                           selected_error=selected_error,
+                           table=True)
 
 @app.route("/logs")
 def logs():
@@ -138,6 +187,7 @@ def form():
             return redirect(url_for("logs"))
         except Exception as e:
             log_to_csv(data, 500, str(e))
+            log_failed_lead(data, str(e), 500, "Form Submission Error")
             return f"Error: {str(e)}", 500
 
     return render_template("form.html", title="Submit a Test Lead")
