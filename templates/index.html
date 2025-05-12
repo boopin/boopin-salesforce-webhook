@@ -1,8 +1,8 @@
-
 {% extends "base.html" %}
 {% block content %}
 <div class="text-center my-4">
- <p class="lead mb-0">Welcome to <strong>Boopin’s Salesforce Lead Integration Tool.</strong></p>
+  <h1 class="mb-3">Boopin Webhook</h1>
+  <p class="lead mb-0">Welcome to <strong>Boopin’s Salesforce Lead Integration Tool.</strong></p>
   <p class="text-muted">Manage and monitor leads from TikTok and Snapchat in real-time.</p>
 </div>
 
@@ -54,9 +54,7 @@
   <a href="/dashboard" class="btn btn-outline-info">📊 View Dashboard</a>
   <a href="/download-log" class="btn btn-outline-dark">⬇️ Download CSV</a>
   <a href="/export-excel" class="btn btn-success">📥 Export to Excel</a>
-
-  <a href="/download-failed-log" class="btn btn-outline-danger">⬇️ Download Failed Logs</a>
-
+  <button class="btn btn-warning" onclick="retryFailedLeads()">🔁 Retry Failed Leads</button>
 </div>
 
 <script>
@@ -90,6 +88,21 @@
     checkThreshold(failed, parseInt(newValue));
   });
 
+  function retryFailedLeads() {
+    fetch('/retry-failed', {
+      method: 'POST'
+    }).then(res => res.json()).then(data => {
+      alert("Retry Complete! Check logs.
+" + JSON.stringify(data.results || data.message, null, 2));
+      refreshStats();
+    });
+  }
+
+  window.addEventListener("DOMContentLoaded", () => {
+    initThreshold();
+    setInterval(refreshStats, 30000);
+  });
+
   function initThreshold() {
     const saved = localStorage.getItem(thresholdKey);
     if (saved) {
@@ -97,10 +110,5 @@
     }
     checkThreshold(parseInt(document.getElementById("failed-count").textContent), parseInt(saved || 5));
   }
-
-  window.addEventListener("DOMContentLoaded", () => {
-    initThreshold();
-    setInterval(refreshStats, 30000);
-  });
 </script>
 {% endblock %}
