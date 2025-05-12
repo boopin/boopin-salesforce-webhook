@@ -134,6 +134,79 @@ def retry_failed_leads():
 
     return jsonify({"results": results}), 200
 
+@app.route("/logs")
+def logs():
+    if not os.path.exists("leads.csv"):
+        return "Log file not found."
+    df = pd.read_csv("leads.csv")
+
+    campaign_filter = request.args.get("campaign")
+    source_filter = request.args.get("source")
+    from_date = request.args.get("from_date")
+
+    all_campaigns = sorted(df["Campaign_Name"].dropna().unique()) if "Campaign_Name" in df else []
+    all_sources = sorted(df["Campaign_Source"].dropna().unique()) if "Campaign_Source" in df else []
+
+    if campaign_filter:
+        df = df[df["Campaign_Name"] == campaign_filter]
+    if source_filter:
+        df = df[df["Campaign_Source"] == source_filter]
+    if from_date:
+        df["Timestamp"] = pd.to_datetime(df["Timestamp"], errors="coerce")
+        df = df[df["Timestamp"] >= pd.to_datetime(from_date)]
+
+    table_html = df.to_html(index=False, classes="table table-striped table-bordered")
+    return render_template("logs.html", title="Lead Logs", table=table_html,
+                           campaigns=all_campaigns, selected=campaign_filter,
+                           sources=all_sources, selected_source=source_filter,
+                           from_date=from_date or "")
+
+@app.route("/failed-logs")
+def failed_logs():
+    if not os.path.exists("failed_leads.csv"):
+        return "No failed leads found."
+    df = pd.read_csv("failed_leads.csv")
+    error_types = sorted(df["Error"].dropna().unique()) if "Error" in df else []
+    selected_error = request.args.get("error_type")
+    if selected_error:
+        df = df[df["Error"] == selected_error]
+
+    headers = df.columns.tolist()
+    rows = df.values.tolist()
+    return render_template("failed_logs.html", title="Failed Leads Log",
+                           headers=headers, rows=rows,
+                           error_types=error_types,
+                           selected_error=selected_error,
+                           table=True)
+
+@app.route("/dashboard")
+def dashboard():
+    if not os.path.exists("leads.csv"):
+        return "Log file not found."
+    df = pd.read_csv("leads.csv")
+    if "Campaign_Source" not in df.columns:
+        return "Campaign_Source column missing in logs."
+    summary = df.groupby("Campaign_Source").size().to_dict()
+    labels = list(summary.keys())
+    values = list(summary.values())
+    return render_template("dashboard.html", title="Dashboard: Leads by Source", labels=labels, values=values)
+
+@app.route("/download-log")
+def download_log():
+    if not os.path.exists("leads.csv"):
+        return "Log file not found."
+    return send_file("leads.csv", mimetype="text/csv", as_attachment=True)
+
+@app.route("/export-excel")
+def export_excel():
+    if not os.path.exists("leads.csv"):
+        return "Log file not found.", 404
+    df = pd.read_csv("leads.csv")
+    output_path = "leads.xlsx"
+    df.to_excel(output_path, index=False)
+    return send_file(output_path, mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                     as_attachment=True, download_name="leads.xlsx")
+
 @app.route("/api/stats")
 def api_stats():
     lead_count = 0
@@ -152,7 +225,6 @@ def index():
     lead_count = 0
     failed_count = 0
     last_time = None
-
     if os.path.exists("leads.csv"):
         df = pd.read_csv("leads.csv")
         lead_count = len(df)
@@ -160,11 +232,9 @@ def index():
             df["Timestamp"] = pd.to_datetime(df["Timestamp"], errors="coerce")
             if not df["Timestamp"].isnull().all():
                 last_time = df["Timestamp"].max().strftime("%d-%m-%Y %H:%M")
-
     if os.path.exists("failed_leads.csv"):
         failed_df = pd.read_csv("failed_leads.csv")
         failed_count = len(failed_df)
-
     return render_template("index.html", title="Boopin Webhook", lead_count=lead_count,
                            last_time=last_time, failed_count=failed_count)
 
