@@ -1,8 +1,8 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="text-center my-4">
-  <p class="lead mb-0">Welcome to <strong>Boopin’s Salesforce Lead Integration Tool.</strong></p>
-  <p class="text-muted">Manage and monitor leads from TikTok and Snapchat in real-time.</p>
+  <p class="lead mb-0">Welcome to <strong>Boopin's Salesforce Lead Integration Tool.</strong></p>
+  <p class="text-muted">Manage and monitor leads from TikTok, Snapchat, and Google Ads in real-time.</p>
 </div>
 
 <div class="d-flex justify-content-between align-items-center mb-3">
@@ -46,14 +46,44 @@
   </div>
 </div>
 
-<div class="d-grid gap-2 col-lg-6 mx-auto">
-  <a href="/form" class="btn btn-primary btn-lg">📩 Submit Test Lead</a>
-  <a href="/logs" class="btn btn-outline-secondary">📄 View Lead Logs</a>
-  <a href="/failed-logs" class="btn btn-outline-danger">🚫 View Failed Logs</a>
-  <a href="/dashboard" class="btn btn-outline-info">📊 View Dashboard</a>
-  <a href="/download-log" class="btn btn-outline-dark">⬇️ Download CSV</a>
-  <a href="/export-excel" class="btn btn-success">📥 Export to Excel</a>
-  <button class="btn btn-warning" onclick="retryFailedLeads()">🔁 Retry Failed Leads</button>
+<div class="row mb-4">
+  <div class="col-lg-6">
+    <h4 class="mb-3">Lead Management</h4>
+    <div class="d-grid gap-2">
+      <a href="/form" class="btn btn-primary btn-lg">
+        <i class="bi bi-send-plus"></i> 📩 Submit Test Lead
+      </a>
+      <a href="/logs" class="btn btn-outline-secondary">
+        <i class="bi bi-file-earmark-text"></i> 📄 View Lead Logs
+      </a>
+      <a href="/failed-logs" class="btn btn-outline-danger">
+        <i class="bi bi-exclamation-triangle"></i> 🚫 View Failed Logs
+      </a>
+    </div>
+  </div>
+  
+  <div class="col-lg-6">
+    <h4 class="mb-3">Analytics & Export</h4>
+    <div class="d-grid gap-2">
+      <a href="/dashboard" class="btn btn-outline-primary">
+        <i class="bi bi-bar-chart"></i> 📊 View Dashboard
+      </a>
+      <a href="/google-leads" class="btn btn-outline-success">
+        <i class="bi bi-google"></i> 🔍 View Google Ads Leads
+      </a>
+      <div class="btn-group">
+        <a href="/download-log" class="btn btn-outline-dark">
+          <i class="bi bi-download"></i> ⬇️ Download CSV
+        </a>
+        <a href="/export-excel" class="btn btn-success">
+          <i class="bi bi-file-earmark-excel"></i> 📥 Export to Excel
+        </a>
+      </div>
+      <button class="btn btn-warning" onclick="retryFailedLeads()">
+        <i class="bi bi-arrow-clockwise"></i> 🔁 Retry Failed Leads
+      </button>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -91,8 +121,7 @@
     fetch('/retry-failed', {
       method: 'POST'
     }).then(res => res.json()).then(data => {
-      alert("Retry Complete! Check logs.
-" + JSON.stringify(data.results || data.message, null, 2));
+      alert("Retry Complete! Check logs.\n" + JSON.stringify(data.results || data.message, null, 2));
       refreshStats();
     });
   }
