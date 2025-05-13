@@ -5,43 +5,123 @@
   <p class="lead">Track and manage leads generated from Google Ads campaigns</p>
 </div>
 
-<div class="card mb-4">
-  <div class="card-body">
-    <form method="get" class="row g-3">
-      <div class="col-md-5">
-        <label for="campaign" class="form-label">Campaign Filter</label>
-        <select name="campaign" id="campaign" class="form-select">
-          <option value="">All Campaigns</option>
-          {% for c in campaigns %}
-            <option value="{{ c }}" {% if c == selected %}selected{% endif %}>{{ c }}</option>
-          {% endfor %}
-        </select>
-      </div>
-      <div class="col-md-5">
-        <label for="date" class="form-label">Date Filter</label>
-        <input type="date" name="date" id="date" class="form-control" value="{{ date }}">
-      </div>
-      <div class="col-md-2 d-flex align-items-end">
-        <button type="submit" class="btn btn-primary w-100">Apply Filters</button>
-      </div>
-    </form>
+<!-- Stats Summary -->
+<div class="row text-center mb-4">
+  <div class="col-md-3">
+    <div class="bg-white shadow-sm rounded p-3 border border-success">
+      <h5 class="text-success">📊 Total Google Leads</h5>
+      <h2 class="text-success">{{ total_leads }}</h2>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="bg-white shadow-sm rounded p-3 border border-primary">
+      <h5 class="text-primary">📅 Today's Leads</h5>
+      <h2 class="text-primary">{{ today_leads }}</h2>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="bg-white shadow-sm rounded p-3 border border-secondary">
+      <h5 class="text-muted">🕒 Last Received</h5>
+      <h2 class="text-muted">{{ last_lead_time or '-' }}</h2>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="bg-white shadow-sm rounded p-3 border border-warning">
+      <h5 class="text-warning">💼 Top Campaign</h5>
+      <h2 class="text-warning">{{ top_campaign or '-' }}</h2>
+    </div>
   </div>
 </div>
 
+<!-- Advanced Filtering and Analysis -->
+<div class="card mb-4">
+  <div class="card-header bg-light d-flex justify-content-between align-items-center">
+    <h5 class="mb-0">Search & Filter Leads</h5>
+    <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#filterCollapse">
+      <i class="bi bi-funnel"></i> Show/Hide Filters
+    </button>
+  </div>
+  <div class="collapse show" id="filterCollapse">
+    <div class="card-body">
+      <form method="get" class="row g-3">
+        <div class="col-md-4">
+          <label for="campaign" class="form-label">Campaign</label>
+          <select name="campaign" id="campaign" class="form-select">
+            <option value="">All Campaigns</option>
+            {% for c in campaigns %}
+              <option value="{{ c }}" {% if c == selected %}selected{% endif %}>{{ c }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-4">
+          <label for="date" class="form-label">Date</label>
+          <input type="date" name="date" id="date" class="form-control" value="{{ date }}">
+        </div>
+        <div class="col-md-4">
+          <label for="search" class="form-label">Search</label>
+          <input type="text" name="search" id="search" class="form-control" placeholder="Email or name..." value="{{ search }}">
+        </div>
+        <div class="col-md-4">
+          <label for="date_range" class="form-label">Date Range</label>
+          <select name="date_range" id="date_range" class="form-select">
+            <option value="">Custom Range</option>
+            <option value="today" {% if date_range == 'today' %}selected{% endif %}>Today</option>
+            <option value="yesterday" {% if date_range == 'yesterday' %}selected{% endif %}>Yesterday</option>
+            <option value="week" {% if date_range == 'week' %}selected{% endif %}>This Week</option>
+            <option value="month" {% if date_range == 'month' %}selected{% endif %}>This Month</option>
+          </select>
+        </div>
+        <div class="col-md-4">
+          <label for="sort" class="form-label">Sort By</label>
+          <select name="sort" id="sort" class="form-select">
+            <option value="newest" {% if sort == 'newest' %}selected{% endif %}>Newest First</option>
+            <option value="oldest" {% if sort == 'oldest' %}selected{% endif %}>Oldest First</option>
+            <option value="campaign" {% if sort == 'campaign' %}selected{% endif %}>Campaign</option>
+            <option value="name" {% if sort == 'name' %}selected{% endif %}>Name</option>
+          </select>
+        </div>
+        <div class="col-md-4 d-flex align-items-end">
+          <div class="btn-group w-100">
+            <button type="submit" class="btn btn-primary">Apply Filters</button>
+            <a href="/google-leads" class="btn btn-outline-secondary">Reset</a>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Campaign Performance Chart -->
+{% if campaign_data %}
+<div class="card mb-4">
+  <div class="card-header bg-light">
+    <h5 class="mb-0">Campaign Performance</h5>
+  </div>
+  <div class="card-body">
+    <canvas id="campaignChart" height="300"></canvas>
+  </div>
+</div>
+{% endif %}
+
+<!-- Lead Actions -->
 <div class="d-flex justify-content-between mb-3">
   <div>
-    <h4>Lead Records</h4>
+    <h4>Lead Records ({{ filtered_count }} of {{ total_leads }})</h4>
   </div>
   <div class="btn-group">
-    <a href="/download-google-leads{% if selected %}?campaign={{ selected }}{% endif %}{% if date %}&date={{ date }}{% endif %}" class="btn btn-outline-dark">
+    <a href="/download-google-leads{% if selected %}?campaign={{ selected }}{% endif %}{% if date %}&date={{ date }}{% endif %}{% if search %}&search={{ search }}{% endif %}" class="btn btn-outline-dark">
       <i class="bi bi-download"></i> Download CSV
     </a>
-    <a href="/export-google-excel{% if selected %}?campaign={{ selected }}{% endif %}{% if date %}&date={{ date }}{% endif %}" class="btn btn-success">
+    <a href="/export-google-excel{% if selected %}?campaign={{ selected }}{% endif %}{% if date %}&date={{ date }}{% endif %}{% if search %}&search={{ search }}{% endif %}" class="btn btn-success">
       <i class="bi bi-file-earmark-excel"></i> Export Excel
     </a>
+    <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#sendToSalesforceModal">
+      <i class="bi bi-cloud-arrow-up"></i> Send to Salesforce
+    </button>
   </div>
 </div>
 
+<!-- Data Table -->
 {% if no_data %}
   <div class="alert alert-info text-center">
     <i class="bi bi-info-circle fs-4"></i>
@@ -49,14 +129,213 @@
     <p class="mb-0">Leads will appear here once they are received from Google Ads.</p>
   </div>
 {% else %}
-  <div class="table-responsive">
-    {{ table | safe }}
+  <div class="card">
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        {{ table | safe }}
+      </div>
+    </div>
+    
+    <!-- Pagination -->
+    {% if pages > 1 %}
+    <div class="card-footer bg-light">
+      <nav>
+        <ul class="pagination justify-content-center mb-0">
+          <li class="page-item {% if page == 1 %}disabled{% endif %}">
+            <a class="page-link" href="/google-leads?page={{ page - 1 }}{% if selected %}&campaign={{ selected }}{% endif %}{% if date %}&date={{ date }}{% endif %}{% if search %}&search={{ search }}{% endif %}">Previous</a>
+          </li>
+          
+          {% for i in range(1, pages + 1) %}
+          <li class="page-item {% if i == page %}active{% endif %}">
+            <a class="page-link" href="/google-leads?page={{ i }}{% if selected %}&campaign={{ selected }}{% endif %}{% if date %}&date={{ date }}{% endif %}{% if search %}&search={{ search }}{% endif %}">{{ i }}</a>
+          </li>
+          {% endfor %}
+          
+          <li class="page-item {% if page == pages %}disabled{% endif %}">
+            <a class="page-link" href="/google-leads?page={{ page + 1 }}{% if selected %}&campaign={{ selected }}{% endif %}{% if date %}&date={{ date }}{% endif %}{% if search %}&search={{ search }}{% endif %}">Next</a>
+          </li>
+        </ul>
+      </nav>
+    </div>
+    {% endif %}
   </div>
 {% endif %}
+
+<!-- Send to Salesforce Modal -->
+<div class="modal fade" id="sendToSalesforceModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Send Leads to Salesforce</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="salesforceForm">
+          <div class="mb-3">
+            <label class="form-label">Select Leads</label>
+            <select class="form-select" name="lead_selection">
+              <option value="all">All Currently Filtered Leads</option>
+              <option value="unsent">Only Leads Not Yet Sent to Salesforce</option>
+              <option value="failed">Only Leads That Previously Failed</option>
+            </select>
+          </div>
+          
+          <div class="mb-3">
+            <label class="form-label">Lead Settings</label>
+            <div class="form-check mb-2">
+              <input class="form-check-input" type="checkbox" name="mark_sent" id="markSent" checked>
+              <label class="form-check-label" for="markSent">Mark as sent after processing</label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" name="log_results" id="logResults" checked>
+              <label class="form-check-label" for="logResults">Log detailed results</label>
+            </div>
+          </div>
+        </form>
+        
+        <div id="sendingProgress" class="d-none">
+          <div class="progress mb-3">
+            <div class="progress-bar progress-bar-striped progress-bar-animated" style="width: 100%"></div>
+          </div>
+          <p class="text-center" id="progressText">Processing leads...</p>
+        </div>
+        
+        <div id="sendResults" class="d-none">
+          <div class="alert alert-success mb-2">
+            <strong>Successfully sent: </strong> <span id="successCount">0</span>
+          </div>
+          <div class="alert alert-danger">
+            <strong>Failed: </strong> <span id="failCount">0</span>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-primary" id="sendToSalesforceBtn">Send to Salesforce</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <div class="mt-4 text-center">
   <a href="/" class="btn btn-outline-primary">
     <i class="bi bi-house"></i> Back to Dashboard
   </a>
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Campaign Performance Chart
+    {% if campaign_data %}
+    const ctx = document.getElementById('campaignChart').getContext('2d');
+    new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: {{ campaign_data.labels|safe }},
+        datasets: [{
+          label: 'Leads by Campaign',
+          data: {{ campaign_data.values|safe }},
+          backgroundColor: 'rgba(40, 167, 69, 0.7)',
+          borderColor: 'rgba(40, 167, 69, 1)',
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        scales: {
+          y: {
+            beginAtZero: true,
+            title: {
+              display: true,
+              text: 'Number of Leads'
+            }
+          }
+        }
+      }
+    });
+    {% endif %}
+    
+    // Send to Salesforce functionality
+    const sendToSalesforceBtn = document.getElementById('sendToSalesforceBtn');
+    if (sendToSalesforceBtn) {
+      sendToSalesforceBtn.addEventListener('click', function() {
+        const form = document.getElementById('salesforceForm');
+        const formData = new FormData(form);
+        const data = {
+          selection: formData.get('lead_selection'),
+          markSent: formData.get('mark_sent') === 'on',
+          logResults: formData.get('log_results') === 'on',
+          filters: {
+            campaign: '{{ selected }}',
+            date: '{{ date }}',
+            search: '{{ search }}'
+          }
+        };
+        
+        // Show progress
+        document.getElementById('salesforceForm').classList.add('d-none');
+        document.getElementById('sendingProgress').classList.remove('d-none');
+        sendToSalesforceBtn.disabled = true;
+        
+        // Send request
+        fetch('/api/send-google-leads-to-salesforce', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(data)
+        })
+        .then(res => res.json())
+        .then(result => {
+          // Hide progress, show results
+          document.getElementById('sendingProgress').classList.add('d-none');
+          document.getElementById('sendResults').classList.remove('d-none');
+          
+          // Update result counts
+          document.getElementById('successCount').textContent = result.success;
+          document.getElementById('failCount').textContent = result.failure;
+          
+          // Change button to refresh
+          sendToSalesforceBtn.textContent = 'Refresh Page';
+          sendToSalesforceBtn.disabled = false;
+          sendToSalesforceBtn.addEventListener('click', function() {
+            window.location.reload();
+          }, { once: true });
+        })
+        .catch(err => {
+          document.getElementById('progressText').innerHTML = `
+            <div class="alert alert-danger">Error: ${err.message}</div>
+          `;
+          sendToSalesforceBtn.disabled = false;
+        });
+      });
+    }
+    
+    // Date range selector logic
+    const dateRangeSelect = document.getElementById('date_range');
+    const dateInput = document.getElementById('date');
+    
+    if (dateRangeSelect && dateInput) {
+      dateRangeSelect.addEventListener('change', function() {
+        if (this.value === 'today') {
+          const today = new Date().toISOString().split('T')[0];
+          dateInput.value = today;
+        } else if (this.value === 'yesterday') {
+          const yesterday = new Date();
+          yesterday.setDate(yesterday.getDate() - 1);
+          dateInput.value = yesterday.toISOString().split('T')[0];
+        } else if (this.value === 'week') {
+          const weekStart = new Date();
+          weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+          dateInput.value = weekStart.toISOString().split('T')[0];
+        } else if (this.value === 'month') {
+          const monthStart = new Date();
+          monthStart.setDate(1);
+          dateInput.value = monthStart.toISOString().split('T')[0];
+        }
+      });
+    }
+  });
+</script>
 {% endblock %}
