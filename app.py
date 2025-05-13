@@ -371,21 +371,49 @@ def logs():
         from_date=from_date
     )
 
-@app.route("/failed-logs")
+@app.route("/failed-logs", methods=["GET"])
 def failed_logs():
-    """Display failed lead logs with filtering"""
+    """Display failed lead logs with filtering and retry options"""
     if not os.path.exists("failed_leads.csv"):
         return render_template("failed_logs.html", title="Failed Leads Log", no_data=True)
         
     df = pd.read_csv("failed_leads.csv")
     
-    # Get unique error types for filtering
+    # Get unique error types and campaigns for filtering
     error_types = df["Error"].dropna().unique().tolist() if "Error" in df.columns else []
+    campaigns = df["Campaign_Source"].dropna().unique().tolist() if "Campaign_Source" in df.columns else []
     
-    # Apply filter
+    # Apply filters
     selected_error = request.args.get("error_type")
+    selected_campaign = request.args.get("campaign")
+    
     if selected_error:
         df = df[df["Error"] == selected_error]
+        
+    if selected_campaign:
+        df = df[df["Campaign_Source"] == selected_campaign]
+    
+    # Add row IDs for selective retry
+    df = df.reset_index().rename(columns={"index": "ID"})
+    
+    # Group errors by type and count for chart
+    error_counts = df["Error"].value_counts().to_dict()
+    
+    # Analyze common error patterns
+    error_analysis = {}
+    for error in error_types:
+        if "INVALID" in error:
+            error_analysis[error] = "Data validation error. Check the lead information for formatting issues."
+        elif "AUTH" in error or "TOKEN" in error:
+            error_analysis[error] = "Authentication failure. Verify Salesforce credentials."
+        elif "RATE" in error:
+            error_analysis[error] = "Rate limiting. The API has reached its call limit. Wait and retry."
+        elif "TIMEOUT" in error:
+            error_analysis[error] = "Connection timeout. Network or server performance issue."
+        elif "API Error" in error:
+            error_analysis[error] = "General API error. Check the status code for more information."
+        else:
+            error_analysis[error] = "Unknown error. Check the response for details."
     
     # Convert to template format
     headers = df.columns.tolist()
@@ -398,31 +426,11 @@ def failed_logs():
         headers=headers,
         rows=rows,
         error_types=error_types,
-        selected_error=selected_error
-    )
-
-@app.route("/dashboard")
-def dashboard():
-    """Display dashboard with charts"""
-    if not os.path.exists("leads.csv"):
-        return render_template("dashboard.html", title="Dashboard", 
-                              labels=json.dumps([]), values=json.dumps([]))
-    
-    df = pd.read_csv("leads.csv")
-    
-    # Count leads by source
-    if "Campaign_Source" in df.columns:
-        source_counts = df["Campaign_Source"].value_counts()
-        labels = source_counts.index.tolist()
-        values = source_counts.values.tolist()
-    else:
-        labels, values = [], []
-    
-    return render_template(
-        "dashboard.html",
-        title="Dashboard", 
-        labels=json.dumps(labels),
-        values=json.dumps(values)
+        campaigns=campaigns,
+        selected_error=selected_error,
+        selected_campaign=selected_campaign,
+        error_counts=json.dumps(error_counts),
+        error_analysis=error_analysis
     )
 
 @app.route("/download-log")
@@ -498,8 +506,13 @@ def export_failed_log():
     
     # Apply filters if provided
     selected_error = request.args.get("error_type")
+    selected_campaign = request.args.get("campaign")
+    
     if selected_error:
         df = df[df["Error"] == selected_error]
+        
+    if selected_campaign:
+        df = df[df["Campaign_Source"] == selected_campaign]
     
     # Create Excel in memory
     output = io.BytesIO()
@@ -520,11 +533,21 @@ def retry_failed():
     """Retry failed leads"""
     if not os.path.exists("failed_leads.csv"):
         return jsonify({"message": "No failed leads to retry"}), 404
-        
-    df = pd.read_csv("failed_leads.csv")
-    results = {"success": 0, "failure": 0}
     
-    for _, row in df.iterrows():
+    # Check if specific IDs are provided for selective retry
+    selected_ids = request.json.get("ids") if request.json else None
+    
+    df = pd.read_csv("failed_leads.csv")
+    df = df.reset_index().rename(columns={"index": "ID"})
+    
+    # Filter by selected IDs if provided
+    if selected_ids:
+        df = df[df["ID"].isin(selected_ids)]
+    
+    results = {"success": 0, "failure": 0, "details": []}
+    successful_indices = []
+    
+    for index, row in df.iterrows():
         try:
             lead_data = {
                 "Enquiry_Type": "Book_a_Test_Drive",
@@ -558,20 +581,64 @@ def retry_failed():
             if 200 <= status < 300:
                 log_lead(lead_data, status)
                 results["success"] += 1
+                successful_indices.append(index)
+                results["details"].append({
+                    "id": int(row.get("ID", 0)),
+                    "name": f"{row.get('Firstname', '')} {row.get('Lastname', '')}",
+                    "status": "Success",
+                    "message": "Lead sent successfully"
+                })
             else:
                 results["failure"] += 1
+                results["details"].append({
+                    "id": int(row.get("ID", 0)),
+                    "name": f"{row.get('Firstname', '')} {row.get('Lastname', '')}",
+                    "status": "Failed",
+                    "message": f"Status: {status}, Response: {response}"
+                })
                 
-        except Exception:
+        except Exception as e:
             results["failure"] += 1
+            results["details"].append({
+                "id": int(row.get("ID", 0)),
+                "name": f"{row.get('Firstname', '')} {row.get('Lastname', '')}",
+                "status": "Error",
+                "message": str(e)
+            })
     
-    # Optionally clear the failed_leads.csv if all succeeded
-    if results["failure"] == 0 and results["success"] > 0:
-        headers = df.columns.tolist()
-        with open("failed_leads.csv", "w", newline="") as f:
-            writer = csv.writer(f)
-            writer.writerow(headers)
+    # Remove successful leads from the failed_leads.csv if requested
+    if request.json and request.json.get("removeSuccessful", True) and successful_indices:
+        original_df = pd.read_csv("failed_leads.csv")
+        original_df = original_df.reset_index().rename(columns={"index": "ID"})
+        original_df = original_df[~original_df.index.isin(successful_indices)]
+        original_df = original_df.drop(columns=["ID"])
+        original_df.to_csv("failed_leads.csv", index=False)
     
     return jsonify({"results": results})
+
+@app.route("/dashboard")
+def dashboard():
+    """Display dashboard with charts"""
+    if not os.path.exists("leads.csv"):
+        return render_template("dashboard.html", title="Dashboard", 
+                              labels=json.dumps([]), values=json.dumps([]))
+    
+    df = pd.read_csv("leads.csv")
+    
+    # Count leads by source
+    if "Campaign_Source" in df.columns:
+        source_counts = df["Campaign_Source"].value_counts()
+        labels = source_counts.index.tolist()
+        values = source_counts.values.tolist()
+    else:
+        labels, values = [], []
+    
+    return render_template(
+        "dashboard.html",
+        title="Dashboard", 
+        labels=json.dumps(labels),
+        values=json.dumps(values)
+    )
 
 @app.route("/api/stats")
 def api_stats():
