@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block content %}
+  <div class="container mt-4">
+    <h2 class="mb-4 text-center text-primary">{{ title }}</h2>
+    <div class="table-responsive">
+      {{ table|safe }}
+    </div>
+    <div class="mt-3 text-center">
+      <a href="/" class="btn btn-secondary">🔙 Back to Home</a>
+    </div>
+  </div>
+{% endblock %}
