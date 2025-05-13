@@ -118,12 +118,23 @@
   });
 
   function retryFailedLeads() {
-    fetch('/retry-failed', {
-      method: 'POST'
-    }).then(res => res.json()).then(data => {
-      alert("Retry Complete! Check logs.\n" + JSON.stringify(data.results || data.message, null, 2));
-      refreshStats();
-    });
+    if (confirm("Are you sure you want to retry all failed leads? This will attempt to resend all leads that previously failed.")) {
+      fetch('/retry-failed', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          removeSuccessful: true
+        })
+      }).then(res => res.json()).then(data => {
+        const results = data.results;
+        alert(`Retry Complete!\n\nSuccesses: ${results.success}\nFailures: ${results.failure}\n\nCheck the Failed Logs page for details.`);
+        refreshStats();
+      }).catch(err => {
+        alert("Error: " + err.message);
+      });
+    }
   }
 
   window.addEventListener("DOMContentLoaded", () => {
