@@ -152,7 +152,7 @@ def form():
 def webhook():
     """Handle incoming webhook from TikTok/Snapchat"""
     try:
-        data = request.json
+        data = request.json.copy()  # Create a copy to modify safely
         
         # Validate required fields
         required_fields = ["Firstname", "Lastname", "Mobile", "Email"]
@@ -245,7 +245,14 @@ def google_webhook():
                 ""
             ])
             
-        # Optionally forward to Salesforce
+        # Process purchase timeframe if it's in incoming data
+        purchase_time_frame = "More than 3 months"
+        if "Purchase_Time_Frame" in data and data["Purchase_Time_Frame"]:
+            purchase_time_frame = get_purchase_timeframe(data["Purchase_Time_Frame"])
+        elif "Purchase_TimeFrame" in data and data["Purchase_TimeFrame"]:
+            purchase_time_frame = get_purchase_timeframe(data["Purchase_TimeFrame"])
+            
+        # Build the lead data with only the correct field
         lead_data = {
             "Enquiry_Type": "Book_a_Test_Drive",
             "Firstname": data.get("firstName", ""),
@@ -263,7 +270,7 @@ def google_webhook():
             "Campaign_Medium": "Boopin",
             "TestDriveType": "In Showroom",
             "Extended_Privacy": "true",
-            "Purchase_Time_Frame": "More than 3 months",
+            "Purchase_Time_Frame": purchase_time_frame,  # Only use the correct field
             "Source_Site": "google ads",
             "Marketing_Communication_Consent": "1",
             "Fund": "DD",
@@ -507,7 +514,7 @@ def send_google_leads_to_salesforce():
                 "Campaign_Medium": "Boopin",
                 "TestDriveType": "In Showroom",
                 "Extended_Privacy": "true",
-                "Purchase_Time_Frame": "More than 3 months",
+                "Purchase_Time_Frame": "More than 3 months",  # Only use the correct field
                 "Source_Site": "google ads",
                 "Marketing_Communication_Consent": "1",
                 "Fund": "DD",
@@ -720,7 +727,7 @@ def failed_logs():
         
     df = pd.read_csv("failed_leads.csv")
     
-    # Format timestamps in user-friendly way
+   # Format timestamps in user-friendly way
     if "Timestamp" in df.columns:
         df["Timestamp"] = pd.to_datetime(df["Timestamp"], errors="coerce")
         df["Timestamp"] = df["Timestamp"].apply(format_timestamp_for_display)
@@ -741,6 +748,7 @@ def failed_logs():
     
     # Add row IDs for selective retry
     df = df.reset_index().rename(columns={"index": "ID"})
+    
     # Group errors by type and count for chart
     error_counts = df["Error"].value_counts().to_dict()
     
@@ -904,8 +912,13 @@ def retry_failed():
         try:
             # Process purchase timeframe if it's in Arabic
             purchase_time_frame = "More than 3 months"
-            if "Purchase_Time_Frame" in row and row["Purchase_Time_Frame"]:
-                purchase_time_frame = get_purchase_timeframe(row["Purchase_Time_Frame"])
+            
+            # Extract data from row, removing old Purchase_TimeFrame fields
+            row_data = row.to_dict()
+            if "Purchase_Time_Frame" in row_data and row_data["Purchase_Time_Frame"]:
+                purchase_time_frame = get_purchase_timeframe(row_data["Purchase_Time_Frame"])
+            elif "Purchase_TimeFrame" in row_data and row_data["Purchase_TimeFrame"]:
+                purchase_time_frame = get_purchase_timeframe(row_data["Purchase_TimeFrame"])
                 
             lead_data = {
                 "Enquiry_Type": "Book_a_Test_Drive",
@@ -924,7 +937,7 @@ def retry_failed():
                 "Campaign_Medium": "Boopin",
                 "TestDriveType": "In Showroom",
                 "Extended_Privacy": "true",
-                "Purchase_Time_Frame": purchase_time_frame,
+                "Purchase_Time_Frame": purchase_time_frame,  # Only use the correct field
                 "Source_Site": row.get("Campaign_Source", "").lower() + " Ads" if row.get("Campaign_Source") else "",
                 "Marketing_Communication_Consent": "1",
                 "Fund": "DD",
