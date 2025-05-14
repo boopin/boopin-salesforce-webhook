@@ -138,7 +138,8 @@ def form():
             return redirect(url_for("index"))
             
     return render_template("form.html", title="Submit a Test Lead")
-    @app.route("/webhook", methods=["POST"])
+
+@app.route("/webhook", methods=["POST"])
 def webhook():
     """Handle incoming webhook from TikTok/Snapchat"""
     try:
