@@ -405,7 +405,8 @@ def google_leads():
         page=page,
         pages=total_pages
     )
-    @app.route("/api/send-google-leads-to-salesforce", methods=["POST"])
+
+@app.route("/api/send-google-leads-to-salesforce", methods=["POST"])
 def send_google_leads_to_salesforce():
     """API endpoint to send Google leads to Salesforce"""
     if not os.path.exists("google_leads.csv"):
@@ -733,7 +734,7 @@ def failed_logs():
             error_analysis[error] = "Authentication failure. Verify Salesforce credentials."
         elif "RATE" in error:
             error_analysis[error] = "Rate limiting. The API has reached its call limit. Wait and retry."
-elif "TIMEOUT" in error:
+        elif "TIMEOUT" in error:
             error_analysis[error] = "Connection timeout. Network or server performance issue."
         elif "API Error" in error:
             error_analysis[error] = "General API error. Check the status code for more information."
