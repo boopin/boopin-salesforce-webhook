@@ -161,8 +161,15 @@ def webhook():
                 return jsonify({"error": f"Missing required field: {field}"}), 400
         
         # Process purchase timeframe if it's in Arabic
+        purchase_time_frame = "More than 3 months"
         if "Purchase_Time_Frame" in data and data["Purchase_Time_Frame"]:
-            data["Purchase_Time_Frame"] = get_purchase_timeframe(data["Purchase_Time_Frame"])
+            purchase_time_frame = get_purchase_timeframe(data["Purchase_Time_Frame"])
+            # Remove the old field to prevent duplication
+            del data["Purchase_Time_Frame"]
+        elif "Purchase_TimeFrame" in data and data["Purchase_TimeFrame"]:
+            purchase_time_frame = get_purchase_timeframe(data["Purchase_TimeFrame"])
+            # Remove the old field to prevent duplication
+            del data["Purchase_TimeFrame"]
         
         # Add default fields
         lead_data = {
@@ -176,7 +183,7 @@ def webhook():
             "Campaign_Medium": "Boopin",
             "TestDriveType": "In Showroom",
             "Extended_Privacy": "true",
-            "Purchase_Time_Frame": "More than 3 months",
+            "Purchase_Time_Frame": purchase_time_frame,  # Set the correct field here
             "Marketing_Communication_Consent": "1",
             "Fund": "DD",
             "FormCode": "PET_Q2_25",
